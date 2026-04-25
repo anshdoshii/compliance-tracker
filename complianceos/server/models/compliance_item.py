@@ -1,6 +1,7 @@
 import uuid
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,8 +28,8 @@ class ComplianceItem(Base):
     ca_action_required: Mapped[bool] = mapped_column(Boolean, server_default="true")
     client_action_required: Mapped[list[str] | None] = mapped_column(TextArray)
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="true")
-    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
@@ -60,12 +61,12 @@ class ClientComplianceItem(Base):
     )
     financial_year: Mapped[str] = mapped_column(String(10), nullable=False)
     period: Mapped[str | None] = mapped_column(String(20))
-    due_date: Mapped[DateTime] = mapped_column(DateTime(timezone=False), nullable=False)
+    due_date: Mapped[date] = mapped_column(Date(), nullable=False)
     status: Mapped[str] = mapped_column(server_default="pending")
-    completed_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     notes: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 

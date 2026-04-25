@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -32,7 +33,7 @@ class Document(Base):
     document_type: Mapped[str | None] = mapped_column(String(50))
     financial_year: Mapped[str | None] = mapped_column(String(10))
     is_deleted: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     client: Mapped["SMBProfile"] = relationship(back_populates="documents")  # noqa: F821
     task: Mapped["Task"] = relationship(back_populates="documents")  # noqa: F821

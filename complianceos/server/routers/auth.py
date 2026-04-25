@@ -86,8 +86,8 @@ async def send_otp(body: OTPSendRequest, request: Request):
     otp = generate_otp()
     otp_ref = uuid_module.uuid4().hex
 
-    await store_otp(redis, otp_ref, body.mobile, otp, body.role)
     await send_otp_via_msg91(body.mobile, otp)
+    await store_otp(redis, otp_ref, body.mobile, otp, body.role)
 
     return _success({"otp_ref": otp_ref, "expires_in": settings.OTP_EXPIRY_SECONDS})
 
@@ -117,6 +117,11 @@ async def verify_otp_endpoint(
         user = User(mobile=body.mobile, role=role, full_name="")
         db.add(user)
         await db.flush()  # populate user.id before token creation
+    elif user.role != role:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=_error("ROLE_MISMATCH", "This account is registered under a different role"),
+        )
 
     user_id = str(user.id)
     access_token = create_access_token(user_id, user.role)

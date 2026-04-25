@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -22,6 +23,6 @@ class HealthScore(Base):
     )
     score: Mapped[int] = mapped_column(Integer, nullable=False)
     breakdown: Mapped[dict | None] = mapped_column(JsonB)
-    calculated_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    calculated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     client: Mapped["SMBProfile"] = relationship(back_populates="health_scores")  # noqa: F821

@@ -1,6 +1,7 @@
 import uuid
+from datetime import date, datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,11 +35,11 @@ class Task(Base):
     description: Mapped[str | None] = mapped_column(Text)
     assigned_to: Mapped[str | None] = mapped_column(String(10))
     status: Mapped[str] = mapped_column(server_default="pending")
-    due_date: Mapped[DateTime | None] = mapped_column(DateTime(timezone=False))
-    completed_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
+    due_date: Mapped[date | None] = mapped_column(Date())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_by: Mapped[str | None] = mapped_column(String(10))
-    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 

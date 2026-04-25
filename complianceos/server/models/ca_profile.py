@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -26,9 +27,9 @@ class CAProfile(Base):
     gstin: Mapped[str | None] = mapped_column(String(15))
     plan: Mapped[str] = mapped_column(String(20), server_default="starter")
     plan_client_limit: Mapped[int] = mapped_column(Integer, server_default="10")
-    plan_expires_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
+    plan_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     razorpay_subscription_id: Mapped[str | None] = mapped_column(String(100))
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 

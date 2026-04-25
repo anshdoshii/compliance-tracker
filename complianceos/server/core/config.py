@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -62,6 +63,12 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
+
+    @model_validator(mode="after")
+    def check_production_secrets(self) -> "Settings":
+        if self.is_production and self.JWT_SECRET_KEY.startswith("change-me"):
+            raise ValueError("JWT_SECRET_KEY must be overridden in production")
+        return self
 
 
 @lru_cache

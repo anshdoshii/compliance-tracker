@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -30,6 +31,6 @@ class Payment(Base):
     status: Mapped[str | None] = mapped_column(String(20))
     method: Mapped[str | None] = mapped_column(String(30))
     webhook_payload: Mapped[dict | None] = mapped_column(JsonB)
-    created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     invoice: Mapped["Invoice"] = relationship(back_populates="payments")  # noqa: F821

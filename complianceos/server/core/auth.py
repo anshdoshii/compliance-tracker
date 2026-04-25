@@ -63,10 +63,11 @@ async def verify_otp(redis: Redis, otp_ref: str, mobile: str, otp: str) -> str:
 async def check_otp_rate_limit(redis: Redis, mobile: str) -> bool:
     """Returns True if under rate limit, False if exceeded."""
     key = f"{_RATE_KEY_PREFIX}{mobile}"
-    count = await redis.incr(key)
-    if count == 1:
-        await redis.expire(key, 3600)
-    return count <= settings.OTP_RATE_LIMIT_PER_HOUR
+    async with redis.pipeline(transaction=True) as pipe:
+        pipe.incr(key)
+        pipe.expire(key, 3600, nx=True)  # nx=True: only set TTL if key has none (Redis 7+)
+        results = await pipe.execute()
+    return results[0] <= settings.OTP_RATE_LIMIT_PER_HOUR
 
 
 async def send_otp_via_msg91(mobile: str, otp: str) -> None:
@@ -86,6 +87,9 @@ async def send_otp_via_msg91(mobile: str, otp: str) -> None:
             },
         )
         resp.raise_for_status()
+        body = resp.json()
+        if body.get("type") == "error":
+            raise RuntimeError(f"MSG91 error: {body.get('message', 'unknown')}")
 
 
 # ---------------------------------------------------------------------------
@@ -131,8 +135,8 @@ async def decode_refresh_token(redis: Redis, token: str) -> str:
     """Validate refresh token signature + Redis presence. Returns user_id."""
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-    except JWTError:
-        raise ValueError("Invalid refresh token")
+    except JWTError as exc:
+        raise ValueError("Invalid refresh token") from exc
 
     if payload.get("type") != "refresh":
         raise ValueError("Not a refresh token")

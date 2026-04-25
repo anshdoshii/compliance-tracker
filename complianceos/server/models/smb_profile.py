@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -30,7 +31,7 @@ class SMBProfile(Base):
     import_export: Mapped[bool] = mapped_column(Boolean, server_default="false")
     is_listed: Mapped[bool] = mapped_column(Boolean, server_default="false")
     standalone_plan: Mapped[str] = mapped_column(String(20), server_default="free")
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 

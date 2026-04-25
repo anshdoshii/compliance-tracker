@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
@@ -26,11 +27,18 @@ async def get_current_user(
 
     try:
         payload = decode_access_token(credentials.credentials)
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+    except JWTError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token") from exc
 
-    user_id: str = payload.get("sub")
-    result = await db.execute(select(User).where(User.id == user_id))
+    raw_id: str | None = payload.get("sub")
+    try:
+        user_uuid = uuid.UUID(raw_id) if raw_id else None
+        if user_uuid is None:
+            raise ValueError
+    except (ValueError, AttributeError) as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
+
+    result = await db.execute(select(User).where(User.id == user_uuid))
     user = result.scalar_one_or_none()
 
     if user is None or not user.is_active:

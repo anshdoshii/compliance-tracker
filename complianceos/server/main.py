@@ -34,7 +34,7 @@ app = FastAPI(
 
 # CORS
 _cors_origins = (
-    ["*"]
+    ["http://localhost:3000", "http://localhost:8080", "http://localhost:5173"]
     if settings.is_development
     else [
         "https://complianceos.in",
@@ -71,13 +71,15 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    # Strip raw input values from error details to avoid leaking submitted OTPs/mobile numbers
+    sanitized = [{"loc": list(e["loc"]), "msg": e["msg"]} for e in exc.errors()]
     return JSONResponse(
         status_code=422,
         content={
             "success": False,
             "data": None,
             "meta": None,
-            "error": {"code": "VALIDATION_ERROR", "message": str(exc.errors())},
+            "error": {"code": "VALIDATION_ERROR", "message": sanitized},
         },
     )
 
