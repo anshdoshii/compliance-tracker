@@ -1,0 +1,52 @@
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ─────────────────────────────────────────────────────
+.venv/
+venv/
+ENV/
+env/
+
+# ── Environment variables ─────────────────────────────────────────────────────
+.env
+!.env.example
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# ── IDEs ─────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Flutter ───────────────────────────────────────────────────────────────────
+flutter_app/.dart_tool/
+flutter_app/build/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+flutter_app/.packages
+
+# ── Alembic ───────────────────────────────────────────────────────────────────
+# migrations/versions/ is tracked intentionally — do not ignore it
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.log
+*.tmp
