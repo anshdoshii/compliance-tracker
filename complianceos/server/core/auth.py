@@ -31,32 +31,38 @@ async def store_otp(redis: Redis, otp_ref: str, mobile: str, otp: str, role: str
 
 
 async def verify_otp(redis: Redis, otp_ref: str, mobile: str, otp: str) -> str:
-    """Verify OTP. Returns role on success. Raises ValueError on failure."""
-    raw = await redis.get(f"{_OTP_KEY_PREFIX}{otp_ref}")
+    """Verify OTP atomically. Returns role on success. Raises ValueError on failure.
+
+    Uses GETDEL to atomically fetch-and-delete the OTP key so that two concurrent
+    requests with the same otp_ref cannot both pass validation (the second will see
+    None and fail). If validation fails, the key is re-stored with the updated
+    attempts counter so the user can retry.
+    """
+    key = f"{_OTP_KEY_PREFIX}{otp_ref}"
+    raw = await redis.getdel(key)  # atomic: fetch and delete in one command
     if raw is None:
         raise ValueError("OTP expired or not found")
 
     data = json.loads(raw)
 
     if data["mobile"] != mobile:
+        # Wrong mobile — put the key back unchanged so the correct user can still verify
+        await redis.set(key, raw, ex=settings.OTP_EXPIRY_SECONDS)
         raise ValueError("Mobile number mismatch")
 
     attempts: int = data.get("attempts", 0)
     if attempts >= settings.OTP_MAX_ATTEMPTS:
-        await redis.delete(f"{_OTP_KEY_PREFIX}{otp_ref}")
+        # Key already deleted by getdel — do not restore
         raise ValueError("Too many incorrect attempts")
 
     # Constant-time comparison
     if not secrets.compare_digest(data["otp"], otp):
         data["attempts"] = attempts + 1
-        await redis.set(
-            f"{_OTP_KEY_PREFIX}{otp_ref}",
-            json.dumps(data),
-            keepttl=True,
-        )
+        # Re-store with updated attempts so the user can retry
+        await redis.set(key, json.dumps(data), ex=settings.OTP_EXPIRY_SECONDS)
         raise ValueError("Incorrect OTP")
 
-    await redis.delete(f"{_OTP_KEY_PREFIX}{otp_ref}")
+    # Correct OTP — key was already deleted by getdel, nothing more to do
     return data["role"]
 
 
