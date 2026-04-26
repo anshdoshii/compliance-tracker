@@ -147,6 +147,14 @@ why in a comment.
 
 ---
 
+## Code Tracker (mandatory)
+
+Every new file, endpoint, model, or test must be documented in `docs/CODE_TRACKER.md` **in the same commit**.
+
+The tracker records: what the file does, every column in new models, every endpoint (method + path + inputs + outputs + error codes), and any design decisions or known TODOs. Future sessions start from this file — if it's stale, context is lost.
+
+---
+
 ## Before writing any code, ask yourself:
 
 1. Is this feature in the current phase scope?
