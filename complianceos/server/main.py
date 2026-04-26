@@ -11,6 +11,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from core.config import settings
 from routers.auth import router as auth_router
+from routers.ca import router as ca_router
+from routers.client import router as client_router
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +113,8 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 # Routers — all under /v1 to match API_REFERENCE.md base URL
 app.include_router(auth_router, prefix="/v1")
+app.include_router(ca_router, prefix="/v1")
+app.include_router(client_router, prefix="/v1")
 
 
 @app.get("/v1/health", tags=["health"])
