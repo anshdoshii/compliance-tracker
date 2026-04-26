@@ -19,7 +19,7 @@ class User(Base):
     email: Mapped[str | None] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(255), nullable=False, server_default="")
     role: Mapped[str] = mapped_column(String(20), nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -27,6 +27,6 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    ca_profile: Mapped["CAProfile"] = relationship(back_populates="user", uselist=False)  # noqa: F821
-    smb_profile: Mapped["SMBProfile"] = relationship(back_populates="user", uselist=False)  # noqa: F821
-    notifications: Mapped[list["Notification"]] = relationship(back_populates="user")  # noqa: F821
+    ca_profile: Mapped["CAProfile"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan", passive_deletes=True)  # noqa: F821
+    smb_profile: Mapped["SMBProfile"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan", passive_deletes=True)  # noqa: F821
+    notifications: Mapped[list["Notification"]] = relationship(back_populates="user", cascade="all, delete-orphan", passive_deletes=True)  # noqa: F821

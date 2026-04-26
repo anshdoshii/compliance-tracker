@@ -102,7 +102,13 @@ def _utc_now() -> datetime:
 
 def create_access_token(user_id: str, role: str) -> str:
     expire = _utc_now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": user_id, "role": role, "exp": expire, "type": "access"}
+    payload = {
+        "sub": user_id,
+        "role": role,
+        "exp": expire,
+        "type": "access",
+        "jti": secrets.token_hex(16),  # unique per token; prevents identical tokens at same second
+    }
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 

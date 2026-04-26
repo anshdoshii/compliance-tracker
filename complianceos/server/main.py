@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from core.config import settings
 from routers.auth import router as auth_router
@@ -52,8 +53,9 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(StarletteHTTPException)
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     detail = exc.detail
     if isinstance(detail, dict) and "error" in detail:
         # Already in our envelope format (set by routers using _error())
