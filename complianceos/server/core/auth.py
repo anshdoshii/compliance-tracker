@@ -108,7 +108,14 @@ def create_access_token(user_id: str, role: str) -> str:
 
 def create_refresh_token(user_id: str) -> str:
     expire = _utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    payload = {"sub": user_id, "exp": expire, "type": "refresh"}
+    # jti (JWT ID) makes each token unique even for the same user at the same second,
+    # so revoking one session doesn't revoke all sessions for that user.
+    payload = {
+        "sub": user_id,
+        "exp": expire,
+        "type": "refresh",
+        "jti": secrets.token_hex(16),
+    }
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
