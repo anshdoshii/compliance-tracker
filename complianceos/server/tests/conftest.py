@@ -5,8 +5,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from core.auth import create_access_token
 from core.database import Base, get_db
 from main import app
+from models.ca_profile import CAProfile
+from models.smb_profile import SMBProfile
+from models.user import User
 
 # Use aiosqlite for in-memory testing (no Postgres needed)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -61,3 +65,59 @@ async def client(db_session, fake_redis):
         yield ac
 
     app.dependency_overrides.clear()
+
+
+# ---------------------------------------------------------------------------
+# Shared factory helpers (used by ca and client test modules)
+# ---------------------------------------------------------------------------
+
+async def make_ca_user(db: AsyncSession, mobile: str = "9000000001") -> tuple[User, str]:
+    """Create a CA user and return (user, bearer_token)."""
+    user = User(mobile=mobile, role="ca", full_name="Test CA")
+    db.add(user)
+    await db.flush()
+    token = create_access_token(str(user.id), "ca")
+    return user, token
+
+
+async def make_ca_profile(db: AsyncSession, user: User) -> CAProfile:
+    """Create a CAProfile for the given user with starter defaults."""
+    profile = CAProfile(
+        user_id=user.id,
+        plan="starter",
+        plan_client_limit=10,
+        firm_name="Test Firm",
+    )
+    db.add(profile)
+    await db.flush()
+    return profile
+
+
+async def make_smb_user(db: AsyncSession, mobile: str = "9000000002") -> tuple[User, str]:
+    """Create an SMB user and return (user, bearer_token)."""
+    user = User(mobile=mobile, role="smb", full_name="Test SMB")
+    db.add(user)
+    await db.flush()
+    token = create_access_token(str(user.id), "smb")
+    return user, token
+
+
+async def make_smb_profile(
+    db: AsyncSession,
+    user: User,
+    company_name: str = "Test Corp",
+) -> SMBProfile:
+    """Create an SMBProfile for the given user."""
+    profile = SMBProfile(
+        user_id=user.id,
+        company_name=company_name,
+        standalone_plan="free",
+        gst_registered=False,
+        gst_composition=False,
+        has_factory=False,
+        import_export=False,
+        is_listed=False,
+    )
+    db.add(profile)
+    await db.flush()
+    return profile
