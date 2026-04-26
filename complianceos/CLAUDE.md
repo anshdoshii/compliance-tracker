@@ -86,6 +86,67 @@ complianceos/
 
 ---
 
+## Testing rules (non-negotiable)
+
+Tests are the only QA layer — there is no frontend, no manual tester, no staging environment.
+Every change ships with tests. No exceptions.
+
+### What to test for every new feature
+1. **Happy path** — correct input, expected output
+2. **Validation errors** — bad input returns 422 with standard envelope
+3. **Auth errors** — missing/invalid/expired token returns 401; wrong role returns 403
+4. **Not-found / business errors** — missing resources, invalid state return 400/404 with envelope
+5. **Concurrency** — any endpoint that writes to Redis or DB must have a concurrent-request test
+6. **Rate limiting** — any rate-limited path must be tested at the limit boundary (exactly N allowed, N+1 blocked)
+7. **Cascade / side-effects** — deleting a parent must be tested to confirm children are gone
+8. **Response envelope** — every endpoint response must have `{success, data, meta, error}` shape
+
+### What to test for every new model
+1. Create and query back — all fields round-trip correctly
+2. Unique constraints — duplicate key raises `IntegrityError`
+3. CHECK constraints — invalid enum values raise `IntegrityError`
+4. Cascade deletes — `session.delete(parent)` removes children
+5. Boolean/default columns — value is correct immediately after flush (no refresh needed)
+6. Date vs datetime columns — `due_date` must be `date`, timestamps must be `datetime`
+
+### Fix code, not tests
+If a test fails and the test logic is correct, the **code is wrong** — fix the code.
+Never add `refresh()` calls, `try/except` wrappers, or skip markers to make a broken
+implementation pass. The test is the spec.
+
+Exceptions: test-infrastructure fixes (e.g. SQLite PRAGMA, conftest setup) are
+acceptable as long as they make the test environment match production behaviour — document
+why in a comment.
+
+### Test file naming
+| What | File |
+|---|---|
+| Unit tests for a module | `tests/test_<module_name>.py` |
+| Integration / end-to-end | `tests/test_integration_<feature>.py` |
+| Exception / error paths | `tests/test_exception_handlers.py` |
+| Concurrency | `tests/test_concurrency.py` |
+| Performance / latency | `tests/test_performance.py` |
+| Model CRUD + constraints | `tests/test_models.py` |
+
+### Concurrency test rules
+- Use `asyncio.gather()` to fire coroutines simultaneously
+- Every Redis read-then-write sequence (OTP verify, token use) must have a concurrent test
+  proving only one caller wins
+- Do **not** use concurrent requests to test DB uniqueness through the HTTP layer —
+  the shared SQLAlchemy session in tests cannot handle concurrent flushes.
+  Test DB uniqueness at the model layer (`test_models.py`) instead.
+
+### Performance test rules
+- All thresholds must be generous enough to pass on a cold dev laptop (not tuned for CI)
+- Single HTTP request: < 300 ms
+- Health check: < 50 ms
+- JWT encode/decode: 1 000 ops < 1 s
+- Bulk inserts (50 rows): < 2 s
+- If a performance test starts flaking, raise the threshold with a comment explaining why —
+  never delete the test
+
+---
+
 ## Before writing any code, ask yourself:
 
 1. Is this feature in the current phase scope?
@@ -93,6 +154,8 @@ complianceos/
 3. Will this work offline (for Flutter)?
 4. Is there a test for this?
 5. Am I storing dates in UTC?
+6. Does every new model have a `default=` (Python-side) for every column that has `server_default=`?
+7. Does every new relationship that owns its children have `cascade="all, delete-orphan"`?
 
 If any answer is no — fix it before moving on.
 
